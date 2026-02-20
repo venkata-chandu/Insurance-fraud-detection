@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+  <title>AutoShield — Insurance Fraud Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #f5f0e8;
+      --bg2:      #ede8de;
+      --surface:  #faf8f4;
+      --border:   #ddd8cc;
+      --border2:  #c8c2b4;
+      --ink:      #1c1a16;
+      --ink2:     #4a4640;
+      --muted:    #8c867a;
+      --accent:   #c96a2e;
+      --green:    #2a7a4b;
+      --red:      #b83030;
+      --warn:     #b87a20;
+      --tag-bg:   #e8e0d0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg); color: var(--ink);
+      min-height: 100vh; font-size: 14px;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(245,240,232,0.93);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2.5rem; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-weight: 800; font-size: 0.95rem;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--ink); display: flex; align-items: center; gap: 0.7rem;
+    }
+    .nav-brand-icon {
+      width: 28px; height: 28px; background: var(--accent);
+      border-radius: 6px; display: flex; align-items: center;
+      justify-content: center; color: white; font-size: 0.75rem; font-weight: 800;
+    }
+    .nav-links { display: flex; align-items: center; gap: 2.5rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--ink); }
+    .btn-nav {
+      background: var(--ink); color: var(--bg); border: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600; font-size: 0.75rem; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 0.5rem 1.3rem;
+      border-radius: 6px; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-nav:hover { background: var(--accent); }
+
+    /* MAIN */
+    main { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+
+    /* PAGE HEADER */
+    .page-header {
+      margin-bottom: 2.5rem;
+      display: flex; align-items: flex-end;
+      justify-content: space-between; gap: 2rem; flex-wrap: wrap;
+      animation: fadeUp 0.5s ease both;
+    }
+    .breadcrumb {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.7rem; color: var(--muted); margin-bottom: 0.8rem;
+    }
+    .breadcrumb span { color: var(--accent); }
+    .page-header h1 {
+      font-weight: 800; font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+      letter-spacing: -0.02em; line-height: 1.15;
+    }
+    .page-header p {
+      margin-top: 0.5rem; color: var(--muted);
+      font-size: 0.85rem; line-height: 1.6; max-width: 420px;
+    }
+    .status-pill {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--tag-bg); border: 1px solid var(--border);
+      border-radius: 100px; padding: 0.4rem 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.7rem; color: var(--ink2); white-space: nowrap;
+    }
+    .status-dot {
+      width: 7px; height: 7px; background: var(--green);
+      border-radius: 50%; animation: blink 2.5s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    /* FORM CARD */
+    .form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 1px 4px rgba(28,26,22,0.07), 0 10px 32px rgba(28,26,22,0.04);
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+
+    /* SECTION BAR */
+    .section-bar {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 0.7rem 1.8rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-bar-title {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.68rem; font-weight: 500; color: var(--accent);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .section-bar-title::before {
+      content:''; display:inline-block; width:10px; height:1px; background:var(--accent);
+    }
+    .section-bar-count { font-family: 'Fira Code', monospace; font-size: 0.65rem; color: var(--muted); }
+
+    /* FIELDS GRID */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    .field-cell {
+      padding: 1rem 1.4rem;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s;
+    }
+    .field-cell:hover { background: rgba(237,232,222,0.55); }
+    .field-cell:nth-child(4n) { border-right: none; }
+
+    .field-cell label {
+      display: block; font-family: 'Fira Code', monospace;
+      font-size: 0.62rem; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.45rem; font-weight: 400;
+    }
+    .field-cell input,
+    .field-cell select {
+      width: 100%; background: transparent; border: none;
+      border-bottom: 1.5px solid var(--border2);
+      color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.84rem; font-weight: 500;
+      padding: 0.28rem 0; outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none; border-radius: 0;
+    }
+    .field-cell input:focus,
+    .field-cell select:focus { border-bottom-color: var(--accent); }
+    .field-cell input::placeholder { color: var(--border2); font-weight: 400; }
+    .field-cell input.error,
+    .field-cell select.error { border-bottom-color: var(--red); }
+    .field-cell select option { background: #faf8f4; color: var(--ink); }
+
+    /* FORM FOOTER */
+    .form-footer {
+      padding: 1.3rem 1.8rem;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      background: var(--bg2); border-top: 1px solid var(--border);
+    }
+    .security-tags { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .sec-tag {
+      font-family: 'Fira Code', monospace; font-size: 0.62rem;
+      color: var(--muted); background: var(--bg);
+      border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem 0.55rem;
+    }
+    .btn-submit {
+      background: var(--accent); color: white; border: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em;
+      padding: 0.75rem 2.2rem; border-radius: 8px; cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: 0.5rem; position: relative;
+    }
+    .btn-submit:hover {
+      background: #a85520;
+      box-shadow: 0 4px 18px rgba(201,106,46,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-spinner {
+      display: none; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .btn-submit.loading .btn-label { opacity: 0.6; }
+    .btn-submit.loading .btn-icon { display: none; }
+    .btn-submit.loading .btn-spinner { display: block; }
+
+    /* RESULT */
+    .result-section { margin-top: 1.5rem; animation: fadeUp 0.4s ease both; }
+    .result-card {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(28,26,22,0.06);
+    }
+    .result-header {
+      padding: 1.2rem 1.8rem;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .result-header-left { display: flex; align-items: center; gap: 1rem; }
+    .verdict-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .result-legal .result-header { background:#edf7f1; border-bottom:1px solid #c3e6d0; }
+    .result-legal .verdict-icon  { background:#d4ede0; }
+    .result-legal .verdict-text  { color:var(--green); }
+    .result-fraud .result-header { background:#fdf0f0; border-bottom:1px solid #f0c8c8; }
+    .result-fraud .verdict-icon  { background:#f8dada; }
+    .result-fraud .verdict-text  { color:var(--red); }
+    .verdict-label {
+      font-family:'Fira Code',monospace; font-size:0.65rem;
+      color:var(--muted); text-transform:uppercase;
+      letter-spacing:0.08em; margin-bottom:0.2rem;
+    }
+    .verdict-text { font-weight:800; font-size:1.05rem; letter-spacing:-0.01em; }
+    .result-body {
+      background: var(--surface); padding: 1.5rem 1.8rem;
+      display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr));
+      gap: 1.5rem;
+    }
+    .s-label {
+      font-family:'Fira Code',monospace; font-size:0.62rem;
+      text-transform:uppercase; letter-spacing:0.08em;
+      color:var(--muted); margin-bottom:0.3rem;
+    }
+    .s-value { font-size:1.6rem; font-weight:800; letter-spacing:-0.02em; line-height:1; }
+    .color-green{color:var(--green)} .color-red{color:var(--red)} .color-warn{color:var(--warn)}
+    .prob-track { height:4px; background:var(--border); border-radius:4px; margin-top:0.5rem; overflow:hidden; }
+    .prob-fill { height:100%; border-radius:4px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
+
+    /* ERROR */
+    .error-banner {
+      margin-top:1rem; background:#fdf0f0;
+      border:1px solid #f0c8c8; border-radius:8px;
+      padding:0.8rem 1.2rem; font-size:0.8rem; color:var(--red);
+      display:flex; align-items:center; gap:0.5rem;
+      animation:fadeUp 0.3s ease both;
+    }
+
+    /* RESPONSIVE */
+    @media(max-width:900px){
+      .fields-grid{grid-template-columns:repeat(2,1fr)}
+      .field-cell:nth-child(4n){border-right:1px solid var(--border)}
+      .field-cell:nth-child(2n){border-right:none}
+    }
+    @media(max-width:540px){
+      .fields-grid{grid-template-columns:1fr}
+      .field-cell{border-right:none!important}
+      nav{padding:0 1rem}
+      .nav-links{display:none}
+      main{padding:2rem 1rem 4rem}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-brand-icon">AI</div>
+    Auto Insurance Claims
+  </div>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#">About</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <button class="btn-nav" onclick="document.getElementById('submitBtn').click()">Predict</button>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">// <span>fraud-detection</span> / claim-analysis</div>
+      <h1>Insurance Fraud Detection</h1>
+      <p>Submit all 30 claim fields below. Our ML model analyses risk factors and returns a real-time fraud probability assessment.</p>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      Model Online — v2.1
+    </div>
+  </div>
+
+  <div class="form-card">
+    <form method="POST" action="/" id="fraudForm" novalidate>
+      <!-- CSRF placeholder — wire up Flask-WTF -->
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+      <!-- ─── SECTION 1: POLICY ─── -->
+      <div class="section-bar">
+        <span class="section-bar-title">Policy Information</span>
+        <span class="section-bar-count">8 fields</span>
+      </div>
+      <div class="fields-grid">
+
+        <div class="field-cell">
+          <label for="months_as_customer">Months as Customer</label>
+          <input type="number" id="months_as_customer" name="months_as_customer" placeholder="e.g. 36" min="0" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="policy_number">Policy Number</label>
+          <input type="text" id="policy_number" name="policy_number" placeholder="e.g. POL-98765" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="policy_bind_date">Policy Bind Date</label>
+          <input type="date" id="policy_bind_date" name="policy_bind_date" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="policy_state">Policy State</label>
+          <select id="policy_state" name="policy_state" required>
+            <option value="">Select state</option>
+            <optgroup label="States">
+              <option>Andhra Pradesh</option>
+              <option>Arunachal Pradesh</option>
+              <option>Assam</option>
+              <option>Bihar</option>
+              <option>Chhattisgarh</option>
+              <option>Goa</option>
+              <option>Gujarat</option>
+              <option>Haryana</option>
+              <option>Himachal Pradesh</option>
+              <option>Jharkhand</option>
+              <option>Karnataka</option>
+              <option>Kerala</option>
+              <option>Madhya Pradesh</option>
+              <option>Maharashtra</option>
+              <option>Manipur</option>
+              <option>Meghalaya</option>
+              <option>Mizoram</option>
+              <option>Nagaland</option>
+              <option>Odisha</option>
+              <option>Punjab</option>
+              <option>Rajasthan</option>
+              <option>Sikkim</option>
+              <option>Tamil Nadu</option>
+              <option>Telangana</option>
+              <option>Tripura</option>
+              <option>Uttar Pradesh</option>
+              <option>Uttarakhand</option>
+              <option>West Bengal</option>
+            </optgroup>
+            <optgroup label="Union Territories">
+              <option>Andaman and Nicobar Islands</option>
+              <option>Chandigarh</option>
+              <option>Dadra and Nagar Haveli and Daman and Diu</option>
+              <option>Delhi (NCT)</option>
+              <option>Jammu and Kashmir</option>
+              <option>Ladakh</option>
+              <option>Lakshadweep</option>
+              <option>Puducherry</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="policy_csl">Policy CSL</label>
+          <select id="policy_csl" name="policy_csl" required>
+            <option value="">Select CSL</option>
+            <option>100/300</option>
+            <option>250/500</option>
+            <option>500/1000</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="policy_deductable">Policy Deductible (₹)</label>
+          <input type="number" id="policy_deductable" name="policy_deductable" placeholder="e.g. 500" min="0" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="policy_annual_premium">Annual Premium (₹)</label>
+          <input type="number" id="policy_annual_premium" name="policy_annual_premium" placeholder="e.g. 12000" min="0" step="0.01" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="insured_zip">Insured ZIP / PIN</label>
+          <input type="text" id="insured_zip" name="insured_zip" placeholder="e.g. 533001" maxlength="10" required>
+        </div>
+
+      </div>
+
+      <!-- ─── SECTION 2: INSURED ─── -->
+      <div class="section-bar">
+        <span class="section-bar-title">Insured Information</span>
+        <span class="section-bar-count">6 fields</span>
+      </div>
+      <div class="fields-grid">
+
+        <div class="field-cell">
+          <label for="insured_sex">Insured Sex</label>
+          <select id="insured_sex" name="insured_sex" required>
+            <option value="">Select</option>
+            <option>MALE</option>
+            <option>FEMALE</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="insured_occupation">Insured Occupation</label>
+          <select id="insured_occupation" name="insured_occupation" required>
+            <option value="">Select</option>
+            <option>adm-clerical</option>
+            <option>exec-managerial</option>
+            <option>handlers-cleaners</option>
+            <option>machine-op-inspct</option>
+            <option>other-service</option>
+            <option>prof-specialty</option>
+            <option>protective-serv</option>
+            <option>sales</option>
+            <option>tech-support</option>
+            <option>transport-moving</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="insured_hobbies">Insured Hobbies</label>
+          <select id="insured_hobbies" name="insured_hobbies" required>
+            <option value="">Select</option>
+            <option>chess</option>
+            <option>cross-fit</option>
+            <option>golf</option>
+            <option>hiking</option>
+            <option>paintball</option>
+            <option>reading</option>
+            <option>sleeping</option>
+            <option>skydiving</option>
+            <option>video-games</option>
+            <option>yachting</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="insured_relationship">Insured Relationship</label>
+          <select id="insured_relationship" name="insured_relationship" required>
+            <option value="">Select</option>
+            <option>husband</option>
+            <option>other-relative</option>
+            <option>own-child</option>
+            <option>unmarried</option>
+            <option>wife</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="capital_gains">Capital Gains (₹)</label>
+          <input type="number" id="capital_gains" name="capital_gains" placeholder="e.g. 0" min="0" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="capital_loss">Capital Loss (₹)</label>
+          <input type="number" id="capital_loss" name="capital_loss" placeholder="e.g. 0" min="0" required>
+        </div>
+
+      </div>
+
+      <!-- ─── SECTION 3: INCIDENT ─── -->
+      <div class="section-bar">
+        <span class="section-bar-title">Incident Details</span>
+        <span class="section-bar-count">12 fields</span>
+      </div>
+      <div class="fields-grid">
+
+        <div class="field-cell">
+          <label for="incident_date">Incident Date</label>
+          <input type="date" id="incident_date" name="incident_date" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="incident_type">Incident Type</label>
+          <select id="incident_type" name="incident_type" required>
+            <option value="">Select</option>
+            <option>Multi-vehicle Collision</option>
+            <option>Parked Car</option>
+            <option>Single Vehicle Collision</option>
+            <option>Vehicle Theft</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="collision_type">Collision Type</label>
+          <select id="collision_type" name="collision_type" required>
+            <option value="">Select</option>
+            <option>Front Collision</option>
+            <option>Rear Collision</option>
+            <option>Side Collision</option>
+            <option>?</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="incident_severity">Incident Severity</label>
+          <select id="incident_severity" name="incident_severity" required>
+            <option value="">Select</option>
+            <option>Major Damage</option>
+            <option>Minor Damage</option>
+            <option>Total Loss</option>
+            <option>Trivial Damage</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="authorities_contacted">Authorities Contacted</label>
+          <select id="authorities_contacted" name="authorities_contacted" required>
+            <option value="">Select</option>
+            <option>Ambulance</option>
+            <option>Fire</option>
+            <option>None</option>
+            <option>Other</option>
+            <option>Police</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="incident_location">Incident Location</label>
+          <input type="text" id="incident_location" name="incident_location" placeholder="e.g. MG Road, Bangalore" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="incident_hour_of_the_day">Hour of Day (0–23)</label>
+          <input type="number" id="incident_hour_of_the_day" name="incident_hour_of_the_day" placeholder="e.g. 14" min="0" max="23" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="number_of_vehicles_involved">Vehicles Involved</label>
+          <input type="number" id="number_of_vehicles_involved" name="number_of_vehicles_involved" placeholder="e.g. 2" min="1" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="property_damage">Property Damage</label>
+          <select id="property_damage" name="property_damage" required>
+            <option value="">Select</option>
+            <option>YES</option>
+            <option>NO</option>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="bodily_injuries">Bodily Injuries</label>
+          <input type="number" id="bodily_injuries" name="bodily_injuries" placeholder="e.g. 1" min="0" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="witnesses">Witnesses</label>
+          <input type="number" id="witnesses" name="witnesses" placeholder="e.g. 2" min="0" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="police_report_available">Police Report Available</label>
+          <select id="police_report_available" name="police_report_available" required>
+            <option value="">Select</option>
+            <option>YES</option>
+            <option>NO</option>
+            <option>?</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- ─── SECTION 4: CLAIM & VEHICLE ─── -->
+      <div class="section-bar">
+        <span class="section-bar-title">Claim &amp; Vehicle</span>
+        <span class="section-bar-count">4 fields</span>
+      </div>
+      <div class="fields-grid">
+
+        <div class="field-cell">
+          <label for="total_claim_amount">Total Claim Amount (₹)</label>
+          <input type="number" id="total_claim_amount" name="total_claim_amount" placeholder="e.g. 75000" min="0" step="0.01" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="auto_make">Auto Make</label>
+          <select id="auto_make" name="auto_make" required>
+            <option value="">Select</option>
+            <optgroup label="Indian Brands">
+              <option>Maruti Suzuki</option>
+              <option>Tata Motors</option>
+              <option>Mahindra</option>
+              <option>Hero MotoCorp</option>
+              <option>Bajaj Auto</option>
+              <option>TVS</option>
+              <option>Ashok Leyland</option>
+              <option>Force Motors</option>
+            </optgroup>
+            <optgroup label="International Brands">
+              <option>Hyundai</option>
+              <option>Toyota</option>
+              <option>Honda</option>
+              <option>Ford</option>
+              <option>Renault</option>
+              <option>Volkswagen</option>
+              <option>Kia</option>
+              <option>Nissan</option>
+              <option>Skoda</option>
+              <option>MG</option>
+              <option>BMW</option>
+              <option>Mercedes</option>
+              <option>Audi</option>
+              <option>Jeep</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="field-cell">
+          <label for="auto_model">Auto Model</label>
+          <input type="text" id="auto_model" name="auto_model" placeholder="e.g. Swift Dzire" required>
+        </div>
+
+        <div class="field-cell">
+          <label for="auto_year">Auto Year</label>
+          <input type="number" id="auto_year" name="auto_year" placeholder="e.g. 2019" min="1990" max="2025" required>
+        </div>
+
+      </div>
+
+      <!-- FORM FOOTER -->
+      <div class="form-footer">
+        <div class="security-tags">
+          <span class="sec-tag">🔒 TLS Encrypted</span>
+          <span class="sec-tag">🛡 CSRF Protected</span>
+          <span class="sec-tag">✔ Input Validated</span>
+          <span class="sec-tag">🚫 XSS Filtered</span>
+          <span class="sec-tag">30 Fields</span>
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <svg class="btn-icon" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5"/>
+          </svg>
+          <div class="btn-spinner"></div>
+          <span class="btn-label">Run Fraud Analysis</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Hidden prediction meta — read by JS after fetch -->
+  <!-- In app.py, add this inside render_template or pass values via a /predict JSON endpoint -->
+  <!-- ─── RESULT BLOCK ─── -->
+  <div class="result-section" id="resultSection" style="display:none;">
+    <div class="result-card" id="resultCard">
+      <div class="result-header">
+        <div class="result-header-left">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div>
+            <div class="verdict-label">Detection Result</div>
+            <div class="verdict-text" id="verdictText"></div>
+          </div>
+        </div>
+      </div>
+      <div class="result-body">
+        <div>
+          <div class="s-label">Classification</div>
+          <div class="s-value" id="classificationValue"></div>
+        </div>
+        <div>
+          <div class="s-label">Fraud Probability</div>
+          <div class="s-value" id="probabilityValue"></div>
+          <div class="prob-track">
+            <div class="prob-fill" id="probBar" style="width:0%;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="s-label">Risk Level</div>
+          <div class="s-value" id="riskValue"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-banner" id="errorBanner" style="display:none;">
+    ⚠ <span id="errorText"></span>
+  </div>
+
+</main>
+
+<script>
+  document.getElementById('fraudForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('submitBtn');
+
+    // Validate required fields
+    const fields = this.querySelectorAll('[required]');
+    let valid = true;
+    fields.forEach(f => {
+      f.classList.remove('error');
+      if (!f.value.trim()) { f.classList.add('error'); valid = false; }
+    });
+    if (!valid) {
+      const first = this.querySelector('.error');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Show loading state
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    // Gather form data
+    const data = new FormData(this);
+
+    fetch('/predict', { method: 'POST', body: data })
+      .then(res => res.json())
+      .then(json => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+
+        if (json.error) {
+          showError(json.error);
+          return;
+        }
+
+        showResult(json.prediction, json.probability, json.risk_level);
+      })
+      .catch(() => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        showError('Server error. Make sure Flask is running.');
+      });
+  });
+
+  function showResult(prediction, probability, riskLevel) {
+    const isFraud = prediction === 1;
+    const probPct = (probability * 100).toFixed(1);
+
+    // Card style
+    const card = document.getElementById('resultCard');
+    card.className = 'result-card ' + (isFraud ? 'result-fraud' : 'result-legal');
+
+    // Icon & verdict
+    document.getElementById('verdictIcon').textContent = isFraud ? '⚠️' : '✅';
+    document.getElementById('verdictText').textContent = isFraud
+      ? 'Fraudulent Claim Detected' : 'Legal Insurance Claim';
+
+    // Classification
+    const cls = document.getElementById('classificationValue');
+    cls.textContent = isFraud ? 'FRAUD' : 'LEGAL';
+    cls.className = 's-value ' + (isFraud ? 'color-red' : 'color-green');
+
+    // Probability
+    const probColor = probability > 0.75 ? 'color-red' : probability > 0.5 ? 'color-warn' : 'color-green';
+    const barColor  = probability > 0.75 ? 'var(--red)' : probability > 0.5 ? 'var(--warn)' : 'var(--green)';
+    const probEl = document.getElementById('probabilityValue');
+    probEl.textContent = probPct + '%';
+    probEl.className = 's-value ' + probColor;
+    const bar = document.getElementById('probBar');
+    bar.style.background = barColor;
+    bar.style.width = '0%';
+    setTimeout(() => bar.style.width = probPct + '%', 200);
+
+    // Risk level
+    const riskEl = document.getElementById('riskValue');
+    riskEl.textContent = riskLevel;
+    riskEl.className = 's-value ' + (riskLevel === 'High' ? 'color-red' : riskLevel === 'Medium' ? 'color-warn' : 'color-green');
+
+    // Show section
+    document.getElementById('resultSection').style.display = 'block';
+    document.getElementById('errorBanner').style.display = 'none';
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showError(msg) {
+    document.getElementById('errorText').textContent = msg;
+    document.getElementById('errorBanner').style.display = 'flex';
+    document.getElementById('resultSection').style.display = 'none';
+  }
+
+  // Clear error highlight on user input
+  document.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('input', () => el.classList.remove('error'));
+  });
+</script>
+
+
+
+</body>
+</html>
